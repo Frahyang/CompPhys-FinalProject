@@ -7,15 +7,14 @@ from scipy.constants import k  # Import the Boltzmann constant
 eta = 1e-3  # Viscosity of water in Pa.s
 r = 1e-6  # Radius of the water particles in meters
 
-# Particle radius
-particle_radius = 3
 
 class Medium:
-    def __init__(self, width, height, temperature):
+    def __init__(self, width, height, temperature, radius=3):
         self.width = width
         self.height = height
         self.temperature = temperature  # This is the Temperature object
         self.particles = []
+        self.particle_radius = radius
 
         # Number of particles
         self.num_particles = 100
@@ -44,13 +43,11 @@ class Medium:
         x1, y1, _, _ = p1
         x2, y2, _, _ = p2
         distance = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
-        return distance < (2 * particle_radius)  # Collision if distance is less than 2 * particle radius
+        return distance < (2 * self.particle_radius)  # Collision if distance is less than 2 * particle radius
 
     def resolve_collision(self, p1, p2):
         p1[2], p2[2] = p2[2], p1[2]  # Swap vx
         p1[3], p2[3] = p2[3], p1[3]  # Swap vy
-
-
 
     def update(self):
         # Calculate the diffusion coefficient at the current temperature
@@ -62,20 +59,17 @@ class Medium:
 
             # Diffusion step (random motion)
             # We simulate the random walk by adding a small random step to the position
-            step_size = math.sqrt(2 * D)  # Step size proportional to diffusion coefficient
+            step_std = math.sqrt(2 * D)  # Step size proportional to diffusion coefficient
 
             # Update velocity with random motion
-            particle[2] += random.uniform(-step_size, step_size)  # Update x-velocity
-            particle[3] += random.uniform(-step_size, step_size)  # Update y-velocity
+            particle[0] += particle[2] + random.gauss(0, step_std)
+            particle[1] += particle[3] + random.gauss(0, step_std)
 
-            # Update position based on velocity
-            particle[0] += particle[2]
-            particle[1] += particle[3]
 
             # Keep particles within bounds
-            if particle[0] - particle_radius <= 0 or particle[0] + particle_radius >= self.width:
+            if particle[0] - self.particle_radius <= 0 or particle[0] + self.particle_radius >= self.width:
                 particle[2] *= -1
-            if particle[1] - particle_radius <= 0 or particle[1] + particle_radius >= self.height:
+            if particle[1] - self.particle_radius <= 0 or particle[1] + self.particle_radius >= self.height:
                 particle[3] *= -1
 
         # Check for collisions between all pairs of particles
@@ -88,4 +82,4 @@ class Medium:
         # Draw each particle as a small circle
         for particle in self.particles:
             x, y, _, _ = particle
-            pygame.draw.circle(screen, (0, 0, 255), (int(x), int(y)), particle_radius)
+            pygame.draw.circle(screen, (0, 0, 255), (int(x), int(y)), self.particle_radius)

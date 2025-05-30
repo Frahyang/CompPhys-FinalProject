@@ -27,7 +27,7 @@ class Liquid:
         distance = (dx**2 + dy**2) ** 0.5
         return distance < (r1 + r2)
 
-    def update(self, water_particles):
+    def update(self, water_particles, water_radius):
         for particle in self.particles:
             # Update position
             particle["x"] += particle["velocity"][0]
@@ -45,12 +45,13 @@ class Liquid:
                 dx = water[0] - particle["x"]
                 dy = water[1] - particle["y"]
                 distance = (dx**2 + dy**2)**0.5
-                if distance < (r + 3):  # 3 = water radius
+                if distance < (r + water_radius):  # 3 = water radius
                     # Swap velocities
                     water[2], particle["velocity"] = particle["velocity"][0], (water[2], particle["velocity"][1])
                     water[3], particle["velocity"] = particle["velocity"][1], (particle["velocity"][0], water[3])
                     # Flatten the velocity tuple
                     particle["velocity"] = (particle["velocity"][0], particle["velocity"][1])
+                
 
 
     def draw(self, screen):
