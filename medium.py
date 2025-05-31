@@ -46,31 +46,73 @@ class Medium:
         return distance < (2 * self.particle_radius)  # Collision if distance is less than 2 * particle radius
 
     def resolve_collision(self, p1, p2):
-        p1[2], p2[2] = p2[2], p1[2]  # Swap vx
-        p1[3], p2[3] = p2[3], p1[3]  # Swap vy
+        x1, y1, vx1, vy1 = p1
+        x2, y2, vx2, vy2 = p2
+
+        dx = x1 - x2
+        dy = y1 - y2
+        distance = math.hypot(dx, dy)
+
+        if distance == 0:
+            return  # Avoid division by zero
+
+        # Normalized collision vector
+        nx = dx / distance
+        ny = dy / distance
+
+        # Relative velocity
+        dvx = vx1 - vx2
+        dvy = vy1 - vy2
+
+        # Velocity component along the normal
+        vn = dvx * nx + dvy * ny
+
+        # Skip if particles are moving away from each other
+        if vn > 0:
+            return
+
+        # Compute new velocities (elastic collision for equal mass)
+        p1[2] -= vn * nx
+        p1[3] -= vn * ny
+        p2[2] += vn * nx
+        p2[3] += vn * ny
 
     def update(self):
         # Calculate the diffusion coefficient at the current temperature
         D = self.calculate_diffusion_coefficient()
+
+        T = self.temperature.get_temperature()
+
+        base_temp = 298
+        scale_factor = T / base_temp
 
         # Update particle positions based on diffusion
         for i, particle in enumerate(self.particles):
             x, y, vx, vy = particle
 
             # Diffusion step (random motion)
-            # We simulate the random walk by adding a small random step to the position
             step_std = math.sqrt(2 * D)  # Step size proportional to diffusion coefficient
 
             # Update velocity with random motion
-            particle[0] += particle[2] + random.gauss(0, step_std)
-            particle[1] += particle[3] + random.gauss(0, step_std)
+            particle[0] += (particle[2] * scale_factor) + random.gauss(0, step_std)
+            particle[1] += (particle[3] * scale_factor) + random.gauss(0, step_std)
 
 
-            # Keep particles within bounds
-            if particle[0] - self.particle_radius <= 0 or particle[0] + self.particle_radius >= self.width:
+            # Keep particles within bounds and reposition if needed
+            if particle[0] - self.particle_radius <= 0:
+                particle[0] = self.particle_radius  # push inside
+                particle[2] *= -1                   # reflect x velocity
+            elif particle[0] + self.particle_radius >= self.width:
+                particle[0] = self.width - self.particle_radius
                 particle[2] *= -1
-            if particle[1] - self.particle_radius <= 0 or particle[1] + self.particle_radius >= self.height:
+
+            if particle[1] - self.particle_radius <= 0:
+                particle[1] = self.particle_radius
+                particle[3] *= -1                   # reflect y velocity
+            elif particle[1] + self.particle_radius >= self.height:
+                particle[1] = self.height - self.particle_radius
                 particle[3] *= -1
+
 
         # Check for collisions between all pairs of particles
         for i in range(len(self.particles)):
