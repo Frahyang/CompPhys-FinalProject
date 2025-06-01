@@ -117,7 +117,7 @@ def stop_simulation():
 
 buttons = [
     Button(SIM_WIDTH + 30, 340, 140, 30, "Reset", reset_simulation),
-    Button(SIM_WIDTH + 30, 380, 140, 30, "Stop", stop_simulation),
+    Button(SIM_WIDTH + 30, 380, 140, 30, "Record", stop_simulation),
 ]
 
 def draw_ui():
