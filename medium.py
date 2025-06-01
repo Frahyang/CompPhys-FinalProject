@@ -53,7 +53,7 @@ class Medium:
         if distance == 0:
             return  # Avoid division by zero
 
-        # Normalized collision vector
+        # Normalized collision vector, dot product
         nx = dx / distance
         ny = dy / distance
 
@@ -91,7 +91,6 @@ class Medium:
             # Update velocity with random motion
             particle[0] += (particle[2] * scale_factor) + random.gauss(0, step_std)
             particle[1] += (particle[3] * scale_factor) + random.gauss(0, step_std)
-
 
             # Keep particles within bounds and reposition if needed
             if particle[0] - self.particle_radius <= 0:
