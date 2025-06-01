@@ -31,6 +31,8 @@ temperature = Temperature(298)  # Initial temperature in Kelvin
 medium = Medium(SIM_WIDTH, HEIGHT, temperature, current_viscosity, radius=20)  # Add radius param
 liquid = Liquid(SIM_WIDTH, HEIGHT, temperature)
 
+stopped = False
+
 class Button:
     def __init__(self, x, y, width, height, text, callback):
         self.rect = pg.Rect(x, y, width, height)
@@ -86,14 +88,36 @@ class Slider:
             ratio = (self.handle_rect.x - self.rect.x) / (self.rect.width - self.handle_rect.width)
             self.value = self.min_val + ratio * (self.max_val - self.min_val)
 
-def reset_simulation():  # <-- ADDED
+def reset_simulation():
     global start_time
     for p in liquid.particles:
         p["trail"].clear()
     start_time = time.time()
 
+def stop_simulation():
+    global stopped
+
+    stopped = True
+    elapsed_time = time.time() - start_time
+
+    D = calculate_diffusion_coefficient(
+        temperature.get_temperature(),
+        50e-6,
+        current_viscosity.get_viscosity(temperature.get_temperature())
+    )
+
+    msd = calculate_msd(liquid.particles[0]["trail"]) * 1e-17  # Scale factor
+    expected_msd = 4 * D * elapsed_time
+
+    print(f"\n=== Simulation Results ===")
+    print(f"Diffusion Coefficient: {D:.3e} m²/s")
+    print(f"Mean Squared Displacement: {msd:.3e} m²")
+    print(f"Expected MSD: {expected_msd:.3e} m²")
+    print(f"Time: {elapsed_time:.1f} s\n")
+
 buttons = [
     Button(SIM_WIDTH + 30, 340, 140, 30, "Reset", reset_simulation),
+    Button(SIM_WIDTH + 30, 380, 140, 30, "Stop", stop_simulation),
 ]
 
 def draw_ui():
@@ -149,18 +173,6 @@ def main():
         # Refresh screen
         pg.display.flip()
         clock.tick(60)
-
-    D = calculate_diffusion_coefficient(
-        temperature.get_temperature(), 
-        50e-6, 
-        current_viscosity.get_viscosity(temperature.get_temperature()))
-    
-    msd = calculate_msd(liquid.particles[0]["trail"]) * 1e-17 # Calibrated to scale with others
-    expected_msd = 4 * D * elapsed_time
-    print(f"Diffusion Coefficient: {D:.3e} m²/s")
-    print(f"Mean Squared Displacement: {msd:.3e} m²")
-    print(f"Expected MSD: {expected_msd} m²")
-    print(f"Time: {elapsed_time} s")
     pg.quit()
     sys.exit()
 
