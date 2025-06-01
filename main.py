@@ -4,6 +4,8 @@ from medium import Medium
 from liquid import Liquid
 from temperature import Temperature
 from diffusioncoefficient import calculate_diffusion_coefficient, calculate_msd
+from viscosity import Viscosity
+import time
 
 # Initialize pygame
 pg.init()
@@ -24,12 +26,26 @@ clock = pg.time.Clock()
 font = pg.font.SysFont(None, 24)
 
 # Initialize simulation objects
+current_viscosity = Viscosity()
 temperature = Temperature(298)  # Initial temperature in Kelvin
-medium = Medium(SIM_WIDTH, HEIGHT, temperature, radius=3)  # Add radius param
+medium = Medium(SIM_WIDTH, HEIGHT, temperature, current_viscosity, radius=20)  # Add radius param
 liquid = Liquid(SIM_WIDTH, HEIGHT, temperature)
 
+class Button:
+    def __init__(self, x, y, width, height, text, callback):
+        self.rect = pg.Rect(x, y, width, height)
+        self.text = text
+        self.callback = callback
+        self.color = (100, 100, 100)
 
-print(liquid.particles[0]["trail"])
+    def draw(self, surface, font):
+        pg.draw.rect(surface, self.color, self.rect)
+        label = font.render(self.text, True, (255, 255, 255))
+        surface.blit(label, (self.rect.x + 5, self.rect.y + 5))
+
+    def handle_event(self, event):
+        if event.type == pg.MOUSEBUTTONDOWN and self.rect.collidepoint(event.pos):
+            self.callback()
 
 class Slider:
     def __init__(self, x, y, width, height, min_val, max_val, initial_val, label):
@@ -70,6 +86,15 @@ class Slider:
             ratio = (self.handle_rect.x - self.rect.x) / (self.rect.width - self.handle_rect.width)
             self.value = self.min_val + ratio * (self.max_val - self.min_val)
 
+def reset_simulation():  # <-- ADDED
+    global start_time
+    for p in liquid.particles:
+        p["trail"].clear()
+    start_time = time.time()
+
+buttons = [
+    Button(SIM_WIDTH + 30, 340, 140, 30, "Reset", reset_simulation),
+]
 
 def draw_ui():
     # Draw control panel background
@@ -79,13 +104,16 @@ def draw_ui():
     # Draw sliders
     temp_slider.draw(screen, font)
     radius_slider.draw(screen, font)
+    for button in buttons:
+        button.draw(screen, font)
 
 
 
-temp_slider = Slider(SIM_WIDTH + 30, 100, 140, 20, 0, 1000, temperature.get_temperature(), "Temperature (K)")
+temp_slider = Slider(SIM_WIDTH + 30, 100, 140, 20, 273, 373, temperature.get_temperature(), "Temperature (K)")
 radius_slider = Slider(SIM_WIDTH + 30, 160, 140, 20, 1, 20, medium.particle_radius, "Radius")
 
 
+start_time = time.time()
 def main():
     running = True
     while running:
@@ -98,6 +126,8 @@ def main():
 
             temp_slider.handle_event(event)
             radius_slider.handle_event(event)
+            for button in buttons:
+                button.handle_event(event)
         
         # Sync slider values to simulation
         temperature.set_temperature(temp_slider.value)
@@ -112,14 +142,25 @@ def main():
         liquid.draw(screen)
         draw_ui()
 
+        elapsed_time = time.time() - start_time
+        stopwatch_text = font.render(f"Time: {elapsed_time:.1f}s", True, WHITE)
+        screen.blit(stopwatch_text, (SIM_WIDTH + 30, 220))
+
         # Refresh screen
         pg.display.flip()
         clock.tick(60)
 
-    D = calculate_diffusion_coefficient(298, 2.5e-6)
-    msd = calculate_msd(liquid.particles[0]["trail"])
+    D = calculate_diffusion_coefficient(
+        temperature.get_temperature(), 
+        50e-6, 
+        current_viscosity.get_viscosity(temperature.get_temperature()))
+    
+    msd = calculate_msd(liquid.particles[0]["trail"]) * 1e-17 # Calibrated to scale with others
+    expected_msd = 4 * D * elapsed_time
     print(f"Diffusion Coefficient: {D:.3e} m²/s")
-    print(f"Mean Squared Displacement: {msd:.2f} px²")
+    print(f"Mean Squared Displacement: {msd:.3e} m²")
+    print(f"Expected MSD: {expected_msd} m²")
+    print(f"Time: {elapsed_time} s")
     pg.quit()
     sys.exit()
 

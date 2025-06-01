@@ -3,21 +3,17 @@ import random
 import math
 from scipy.constants import k  # Import the Boltzmann constant
 
-# Constants
-eta = 1e-3  # Viscosity of water in Pa.s
-r = 1e-6  # Radius of the water particles in meters
-
-
 class Medium:
-    def __init__(self, width, height, temperature, radius=3):
+    def __init__(self, width, height, temperature, current_viscosity, radius):
         self.width = width
         self.height = height
         self.temperature = temperature  # This is the Temperature object
+        self.current_viscosity = current_viscosity
         self.particles = []
         self.particle_radius = radius
 
         # Number of particles
-        self.num_particles = 100
+        self.num_particles = 200
         self.create_particles()
 
     def create_particles(self):
@@ -33,9 +29,10 @@ class Medium:
     def calculate_diffusion_coefficient(self):
         # Get the temperature value from the Temperature object
         T = self.temperature.get_temperature()  # Use get_temperature() method
-
+        eta = self.current_viscosity.get_viscosity(T)
+        r_meters = self.particle_radius * 1e-6
         # Calculate the diffusion coefficient D using Einstein's equation
-        D = (k * T) / (6 * math.pi * eta * r)
+        D = (k * T) / (6 * math.pi * eta * r_meters)
         return D
 
     def check_collision(self, p1, p2):
@@ -83,12 +80,10 @@ class Medium:
 
         T = self.temperature.get_temperature()
 
-        base_temp = 298
-        scale_factor = T / base_temp
+        scale_factor = (T - 273) / 10
 
         # Update particle positions based on diffusion
         for i, particle in enumerate(self.particles):
-            x, y, vx, vy = particle
 
             # Diffusion step (random motion)
             step_std = math.sqrt(2 * D)  # Step size proportional to diffusion coefficient
@@ -119,6 +114,7 @@ class Medium:
             for j in range(i + 1, len(self.particles)):
                 if self.check_collision(self.particles[i], self.particles[j]):
                     self.resolve_collision(self.particles[i], self.particles[j])
+        
 
     def draw(self, screen):
         # Draw each particle as a small circle

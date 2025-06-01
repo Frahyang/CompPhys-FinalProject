@@ -17,7 +17,7 @@ class Liquid:
         for _ in range(self.num_particles):
             x = random.randint(50, self.width - 50)
             y = random.randint(50, self.height - 50)
-            radius = 8
+            radius = 30
             velocity = random.uniform(-1, 1), random.uniform(-1, 1)
             self.particles.append({
                 "x": x,
@@ -35,7 +35,7 @@ class Liquid:
         return distance < (r1 + r2)
 
     def update(self, water_particles, water_radius):
-        scale_factor = max(0.1, (self.temperature.get_temperature() / 298))
+        scale_factor = max(0.1, (self.temperature.get_temperature() - 273) / 10)
         for particle in self.particles:
             # Update position
             particle["x"] += particle["velocity"][0] * scale_factor

@@ -2,14 +2,13 @@ import math
 
 # Constants
 k_B = 1.380649e-23  # Boltzmann constant in J/K
-eta_water = 0.001  # Viscosity of water in Pa·s (N·s/m²)
 pi = math.pi
 
-def calculate_diffusion_coefficient(temperature_K, particle_radius_m):
+def calculate_diffusion_coefficient(temperature_K, particle_radius_m, eta):
     """
     Stokes-Einstein equation: D = kT / (6 * pi * η * r)
     """
-    return k_B * temperature_K / (6 * pi * eta_water * particle_radius_m)
+    return k_B * temperature_K / (6 * pi * eta * particle_radius_m)
 
 def calculate_msd(trail):
     """
