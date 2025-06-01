@@ -1,5 +1,4 @@
 import math
-
 # Constants
 k_B = 1.380649e-23  # Boltzmann constant in J/K
 pi = math.pi

@@ -94,7 +94,7 @@ def reset_simulation():
         p["trail"].clear()
     start_time = time.time()
 
-def stop_simulation():
+def record_simulation():
     global stopped
 
     stopped = True
@@ -117,7 +117,7 @@ def stop_simulation():
 
 buttons = [
     Button(SIM_WIDTH + 30, 340, 140, 30, "Reset", reset_simulation),
-    Button(SIM_WIDTH + 30, 380, 140, 30, "Record", stop_simulation),
+    Button(SIM_WIDTH + 30, 380, 140, 30, "Record", record_simulation),
 ]
 
 def draw_ui():
@@ -140,6 +140,7 @@ radius_slider = Slider(SIM_WIDTH + 30, 160, 140, 20, 1, 20, medium.particle_radi
 start_time = time.time()
 def main():
     running = True
+    auto_recorded = False
     while running:
         screen.fill(GRAY)
 
@@ -169,7 +170,10 @@ def main():
         elapsed_time = time.time() - start_time
         stopwatch_text = font.render(f"Time: {elapsed_time:.1f}s", True, WHITE)
         screen.blit(stopwatch_text, (SIM_WIDTH + 30, 220))
-
+        if elapsed_time >= 60 and not auto_recorded:
+            record_simulation()
+            auto_recorded = True
+        
         # Refresh screen
         pg.display.flip()
         clock.tick(60)

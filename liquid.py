@@ -35,7 +35,7 @@ class Liquid:
         return distance < (r1 + r2)
 
     def update(self, water_particles, water_radius):
-        scale_factor = max(0.1, (self.temperature.get_temperature() - 273) / 10)
+        scale_factor = max(0.5, (self.temperature.get_temperature() - 273) / 10)
         for particle in self.particles:
             # Update position
             particle["x"] += particle["velocity"][0] * scale_factor
@@ -97,9 +97,10 @@ class Liquid:
                     vn = dvx * nx + dvy * ny
 
                     # Skip if they are moving apart
-                    if vn > 0:
-                        continue
-
+                    overlap = (r + water_radius + 1) - distance  # +1 buffer
+                    if overlap > 0:
+                        particle["x"] += nx * overlap
+                        particle["y"] += ny * overlap
                     # Apply elastic collision response
                     mvx -= vn * nx
                     mvy -= vn * ny
